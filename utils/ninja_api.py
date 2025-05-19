@@ -2,9 +2,22 @@ import requests
 from config import RENEWABLES_NINJA_API_KEY
 
 def get_ninja_data(lat, lon, tech="solar", year=2021):
-    base_url = f"https://www.renewables.ninja/api/data/{tech}"
-    headers = {"Authorization": f"Token {RENEWABLES_NINJA_API_KEY}"}
-    model = "pv" if tech == "solar" else "merra2"
+    """
+    Fetch solar or wind data from Renewables.ninja API.
+    """
+
+    # Set base URL and model
+    if tech == "solar":
+        base_url = "https://www.renewables.ninja/api/data/pv"
+    elif tech == "wind":
+        base_url = "https://www.renewables.ninja/api/data/wind"
+    else:
+        raise ValueError("tech must be either 'solar' or 'wind'")
+
+    headers = {
+        "Authorization": f"Token {RENEWABLES_NINJA_API_KEY}"
+    }
+
     params = {
         "lat": lat,
         "lon": lon,
@@ -14,12 +27,14 @@ def get_ninja_data(lat, lon, tech="solar", year=2021):
         "header": True,
         "tz": "Europe/London",
         "capacity": 1,
-        "system_loss": 0.1,
-        "model": model
+        "system_loss": 0.1
     }
+
     if tech == "wind":
         params["height"] = 100
+
     response = requests.get(base_url, headers=headers, params=params)
+
     if response.status_code == 200:
         return response.json()
     else:
