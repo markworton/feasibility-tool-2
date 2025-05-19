@@ -33,7 +33,7 @@ def get_ninja_data(lat, lon, tech="solar", year=2021):
             "header": True,
             "capacity": 1,
             "height": 100,
-            "turbine": "Vestas_V112_3.0MW"
+            "turbine": "Enercon_E101_3000"
         }
 
     else:
