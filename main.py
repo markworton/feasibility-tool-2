@@ -16,19 +16,16 @@ if st.button("Run Feasibility Check"):
         solar_data = get_ninja_data(lat, lon, tech="solar")
         wind_data = get_ninja_data(lat, lon, tech="wind")
 
-        solar_df = pd.DataFrame.from_dict(solar_data.get("data", {}), orient="index")
-        wind_df = pd.DataFrame.from_dict(wind_data.get("data", {}), orient="index")
+        solar_raw = solar_data.get("data", {})
+        wind_raw = wind_data.get("data", {})
 
-        # Patch: Rename single unnamed column to "electricity" if needed
-        if solar_df.shape[1] == 1 and "electricity" not in solar_df.columns:
-            solar_df.columns = ["electricity"]
-        if wind_df.shape[1] == 1 and "electricity" not in wind_df.columns:
-            wind_df.columns = ["electricity"]
+        solar_df = pd.DataFrame({"electricity": [v.get("electricity", 0) for v in solar_raw.values()]})
+        wind_df = pd.DataFrame({"electricity": [v.get("electricity", 0) for v in wind_raw.values()]})
 
         st.success("Assessment Complete!")
 
         st.header("☀️ Solar Feasibility")
-        if "electricity" not in solar_df.columns:
+        if "electricity" not in solar_df.columns or solar_df.empty:
             st.error("❌ Solar data missing 'electricity' column. Check API response.")
         else:
             solar_yield = solar_df["electricity"].sum()
@@ -46,7 +43,7 @@ if st.button("Run Feasibility Check"):
 
         st.divider()
         st.header("💨 Wind Feasibility")
-        if "electricity" not in wind_df.columns:
+        if "electricity" not in wind_df.columns or wind_df.empty:
             st.error("❌ Wind data missing 'electricity' column. Check API response.")
         else:
             wind_yield = wind_df["electricity"].sum()
