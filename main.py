@@ -16,11 +16,23 @@ if st.button("Run Feasibility Check"):
         solar_data = get_ninja_data(lat, lon, tech="solar")
         wind_data = get_ninja_data(lat, lon, tech="wind")
 
+        def extract_electricity(data):
+            values = data.values()
+            if not values:
+                return []
+            sample = next(iter(values))
+            if isinstance(sample, dict) and "electricity" in sample:
+                return [v["electricity"] for v in values]
+            elif isinstance(sample, (float, int)):
+                return list(values)
+            else:
+                return []
+
         solar_raw = solar_data.get("data", {})
         wind_raw = wind_data.get("data", {})
 
-        solar_df = pd.DataFrame({"electricity": [v.get("electricity", 0) for v in solar_raw.values()]})
-        wind_df = pd.DataFrame({"electricity": [v.get("electricity", 0) for v in wind_raw.values()]})
+        solar_df = pd.DataFrame({"electricity": extract_electricity(solar_raw)})
+        wind_df = pd.DataFrame({"electricity": extract_electricity(wind_raw)})
 
         st.success("Assessment Complete!")
 
