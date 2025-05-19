@@ -19,8 +19,11 @@ if st.button("Run Feasibility Check"):
         solar_df = pd.DataFrame.from_dict(solar_data.get("data", {}), orient="index")
         wind_df = pd.DataFrame.from_dict(wind_data.get("data", {}), orient="index")
 
-        
-        
+        # Patch: Rename single unnamed column to "electricity" if needed
+        if solar_df.shape[1] == 1 and "electricity" not in solar_df.columns:
+            solar_df.columns = ["electricity"]
+        if wind_df.shape[1] == 1 and "electricity" not in wind_df.columns:
+            wind_df.columns = ["electricity"]
 
         st.success("Assessment Complete!")
 
