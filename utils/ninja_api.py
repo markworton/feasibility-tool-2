@@ -36,7 +36,7 @@ def get_ninja_data(lat, lon, tech="solar", year=2021):
             "header": True,
             "capacity": 1,
             "height": 100,
-            "turbine": "Vestas_V90_2.0MW"
+            "turbine": "EWT_DW54_500"
         }
     else:
         raise ValueError("tech must be 'solar' or 'wind'")
