@@ -2,10 +2,6 @@ import requests
 from config import RENEWABLES_NINJA_API_KEY
 
 def get_ninja_data(lat, lon, tech="solar", year=2021):
-    """
-    Fetch solar or wind data from Renewables.ninja API.
-    """
-
     headers = {
         "Authorization": f"Token {RENEWABLES_NINJA_API_KEY}"
     }
@@ -25,6 +21,7 @@ def get_ninja_data(lat, lon, tech="solar", year=2021):
             "tracking": 0,
             "system_loss": 0.1
         }
+
     elif tech == "wind":
         base_url = "https://www.renewables.ninja/api/data/wind"
         params = {
@@ -36,8 +33,9 @@ def get_ninja_data(lat, lon, tech="solar", year=2021):
             "header": True,
             "capacity": 1,
             "height": 100,
-            "turbine": "EWT_DW54_500"
+            "turbine": "Vestas_V112_3.0MW"
         }
+
     else:
         raise ValueError("tech must be 'solar' or 'wind'")
 
