@@ -19,8 +19,8 @@ if st.button("Run Feasibility Check"):
         solar_df = pd.DataFrame.from_dict(solar_data.get("data", {}), orient="index")
         wind_df = pd.DataFrame.from_dict(wind_data.get("data", {}), orient="index")
 
-        st.write("Solar API Response:", solar_data)
-        st.write("Wind API Response:", wind_data)
+        
+        
 
         st.success("Assessment Complete!")
 
