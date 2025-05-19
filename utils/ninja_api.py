@@ -6,6 +6,10 @@ def get_ninja_data(lat, lon, tech="solar", year=2021):
     Fetch solar or wind data from Renewables.ninja API.
     """
 
+    headers = {
+        "Authorization": f"Token {RENEWABLES_NINJA_API_KEY}"
+    }
+
     if tech == "solar":
         base_url = "https://www.renewables.ninja/api/data/pv"
         params = {
@@ -16,7 +20,6 @@ def get_ninja_data(lat, lon, tech="solar", year=2021):
             "format": "json",
             "header": True,
             "capacity": 1,
-            "system_loss": 0.1,
             "azim": 180,
             "tilt": 35,
             "tracking": 0
@@ -31,15 +34,11 @@ def get_ninja_data(lat, lon, tech="solar", year=2021):
             "format": "json",
             "header": True,
             "capacity": 1,
-            "system_loss": 0.1,
-            "height": 100
+            "height": 100,
+            "turbine": "Vestas_V90_2.0MW"  # example from Renewables.ninja
         }
     else:
         raise ValueError("tech must be 'solar' or 'wind'")
-
-    headers = {
-        "Authorization": f"Token {RENEWABLES_NINJA_API_KEY}"
-    }
 
     response = requests.get(base_url, headers=headers, params=params)
 
