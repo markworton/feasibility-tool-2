@@ -33,7 +33,7 @@ def get_ninja_data(lat, lon, tech="solar", year=2021):
             "header": True,
             "capacity": 1,
             "height": 100,
-            "turbine": "Enercon_E101_3000"
+            "turbine": "Enercon E101 3000"  # Note: Spaces not underscores
         }
 
     else:
