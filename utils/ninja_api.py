@@ -22,7 +22,8 @@ def get_ninja_data(lat, lon, tech="solar", year=2021):
             "capacity": 1,
             "azim": 180,
             "tilt": 35,
-            "tracking": 0
+            "tracking": 0,
+            "system_loss": 0.1
         }
     elif tech == "wind":
         base_url = "https://www.renewables.ninja/api/data/wind"
@@ -35,7 +36,7 @@ def get_ninja_data(lat, lon, tech="solar", year=2021):
             "header": True,
             "capacity": 1,
             "height": 100,
-            "turbine": "Vestas_V90_2.0MW"  # example from Renewables.ninja
+            "turbine": "Vestas_V90_2.0MW"
         }
     else:
         raise ValueError("tech must be 'solar' or 'wind'")
