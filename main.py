@@ -16,8 +16,8 @@ if st.button("Run Feasibility Check"):
         solar_data = get_ninja_data(lat, lon, tech="solar")
         wind_data = get_ninja_data(lat, lon, tech="wind")
 
-        solar_df = pd.DataFrame(solar_data.get("data", {}))
-        wind_df = pd.DataFrame(wind_data.get("data", {}))
+        solar_df = pd.DataFrame.from_dict(solar_data.get("data", {}), orient="index")
+        wind_df = pd.DataFrame.from_dict(wind_data.get("data", {}), orient="index")
 
         st.write("Solar API Response:", solar_data)
         st.write("Wind API Response:", wind_data)
