@@ -16,23 +16,30 @@ if st.button("Run Feasibility Check"):
         solar_data = get_ninja_data(lat, lon, tech="solar")
         wind_data = get_ninja_data(lat, lon, tech="wind")
 
-        def extract_electricity(data):
-            values = data.values()
-            if not values:
-                return []
-            sample = next(iter(values))
-            if isinstance(sample, dict) and "electricity" in sample:
-                return [v["electricity"] for v in values]
-            elif isinstance(sample, (float, int)):
-                return list(values)
-            else:
+        def extract_electricity(data, label):
+            try:
+                if not data:
+                    st.warning(f"No data returned for {label}.")
+                    return []
+                values = list(data.values())
+                sample = values[0]
+                if isinstance(sample, dict) and "electricity" in sample:
+                    return [v["electricity"] for v in values]
+                elif isinstance(sample, (float, int)):
+                    return list(values)
+                else:
+                    st.warning(f"Unexpected format in {label}: {type(sample)}")
+                    st.json(sample)
+                    return []
+            except Exception as ex:
+                st.error(f"Failed to extract {label} data: {ex}")
                 return []
 
         solar_raw = solar_data.get("data", {})
         wind_raw = wind_data.get("data", {})
 
-        solar_df = pd.DataFrame({"electricity": extract_electricity(solar_raw)})
-        wind_df = pd.DataFrame({"electricity": extract_electricity(wind_raw)})
+        solar_df = pd.DataFrame({"electricity": extract_electricity(solar_raw, "solar")})
+        wind_df = pd.DataFrame({"electricity": extract_electricity(wind_raw, "wind")})
 
         st.success("Assessment Complete!")
 
@@ -60,16 +67,23 @@ if st.button("Run Feasibility Check"):
         else:
             wind_yield = wind_df["electricity"].sum()
             st.metric("Annual Wind Yield (kWh/kW @100m)", f"{wind_yield:.0f}")
-            wind_capex = 1700
-            wind_kw = min(site_size / 30, annual_consumption / wind_yield)
-            wind_cost = wind_kw * wind_capex
-            wind_savings = min(wind_yield * wind_kw, annual_consumption) * 0.20
-            wind_payback = wind_cost / wind_savings if wind_savings > 0 else None
 
-            st.write(f"**Estimated System Size:** {wind_kw:.1f} kW")
-            st.write(f"**CapEx:** £{wind_cost:,.0f}")
-            st.write(f"**Annual Savings:** £{wind_savings:,.0f}")
-            st.write(f"**Estimated Payback:** {wind_payback:.1f} years" if wind_payback else "N/A")
+            turbine_spacing_area = 367000  # m² per turbine based on Enercon E-101 3MW
+            number_of_turbines = int(site_size // turbine_spacing_area)
+
+            if number_of_turbines == 0:
+                st.warning("⚠️ Site too small for a full wind turbine with proper spacing.")
+            else:
+                wind_capacity_kw = number_of_turbines * 3000  # Each turbine is 3MW = 3000kW
+                wind_capex = wind_capacity_kw * 1700
+                wind_savings = min(wind_yield * wind_capacity_kw, annual_consumption) * 0.20
+                wind_payback = wind_capex / wind_savings if wind_savings > 0 else None
+
+                st.write(f"**Estimated Turbines:** {number_of_turbines} x 3MW")
+                st.write(f"**Total Wind Capacity:** {wind_capacity_kw:,} kW")
+                st.write(f"**CapEx:** £{wind_capex:,.0f}")
+                st.write(f"**Annual Savings:** £{wind_savings:,.0f}")
+                st.write(f"**Estimated Payback:** {wind_payback:.1f} years" if wind_payback else "N/A")
 
     except Exception as e:
         st.error(f"❌ Error: {e}")
