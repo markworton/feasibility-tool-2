@@ -16,6 +16,7 @@ unit_factors = {"sqm": 1, "hectares": 10000, "acres": 4046.86}
 site_size = site_input * unit_factors[unit]
 
 annual_consumption = st.number_input("Annual Energy Consumption (kWh/year)", min_value=0)
+export_price = st.number_input("Export Price (p/kWh)", min_value=0.0, value=5.0) / 100  # default 5p/kWh
 
 if st.button("Run Feasibility Check"):
     try:
@@ -59,7 +60,10 @@ if st.button("Run Feasibility Check"):
             solar_capex = 1000
             solar_kwp = min(site_size / 10, annual_consumption / solar_yield)
             solar_cost = solar_kwp * solar_capex
-            solar_savings = min(solar_yield * solar_kwp, annual_consumption) * 0.20
+            solar_generated = solar_yield * solar_kwp
+            solar_used = min(solar_generated, annual_consumption)
+            solar_excess = max(0, solar_generated - annual_consumption)
+            solar_savings = solar_used * 0.20 + solar_excess * export_price
             solar_payback = solar_cost / solar_savings if solar_savings > 0 else None
 
             st.write(f"**Estimated System Size:** {solar_kwp:.1f} kWp")
@@ -83,7 +87,10 @@ if st.button("Run Feasibility Check"):
             else:
                 wind_capacity_kw = number_of_turbines * 3000  # Each turbine is 3MW = 3000kW
                 wind_capex = wind_capacity_kw * 1700
-                wind_savings = min(wind_yield * wind_capacity_kw, annual_consumption) * 0.20
+                wind_generated = wind_yield * wind_capacity_kw
+                wind_used = min(wind_generated, annual_consumption)
+                wind_excess = max(0, wind_generated - annual_consumption)
+                wind_savings = wind_used * 0.20 + wind_excess * export_price
                 wind_payback = wind_capex / wind_savings if wind_savings > 0 else None
 
                 st.write(f"**Estimated Turbines:** {number_of_turbines} x 3MW")
