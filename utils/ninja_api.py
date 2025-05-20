@@ -1,47 +1,89 @@
-import requests
-from config import RENEWABLES_NINJA_API_KEY
+import streamlit as st
+import pandas as pd
+from utils.geolocation import get_coordinates
+from utils.ninja_api import get_ninja_data
 
-def get_ninja_data(lat, lon, tech="solar", year=2021):
-    headers = {
-        "Authorization": f"Token {RENEWABLES_NINJA_API_KEY}"
-    }
+st.set_page_config(page_title="Renewable Feasibility Tool", layout="centered")
+st.title("🔋 Renewable Energy Feasibility Tool")
 
-    if tech == "solar":
-        base_url = "https://www.renewables.ninja/api/data/pv"
-        params = {
-            "lat": lat,
-            "lon": lon,
-            "date_from": f"{year}-01-01",
-            "date_to": f"{year}-12-31",
-            "format": "json",
-            "header": True,
-            "capacity": 1,
-            "azim": 180,
-            "tilt": 35,
-            "tracking": 0,
-            "system_loss": 0.1
-        }
+postcode = st.text_input("Enter UK Postcode")
+site_size = st.number_input("Site Size (sqm)", min_value=0)
+annual_consumption = st.number_input("Annual Energy Consumption (kWh/year)", min_value=0)
 
-    elif tech == "wind":
-        base_url = "https://www.renewables.ninja/api/data/wind"
-        params = {
-            "lat": lat,
-            "lon": lon,
-            "date_from": f"{year}-01-01",
-            "date_to": f"{year}-12-31",
-            "format": "json",
-            "header": True,
-            "capacity": 1,
-            "height": 100,
-            "turbine": "Enercon E101 3000"  # Note: Spaces not underscores
-        }
+if st.button("Run Feasibility Check"):
+    try:
+        lat, lon = get_coordinates(postcode)
+        solar_data = get_ninja_data(lat, lon, tech="solar")
+        wind_data = get_ninja_data(lat, lon, tech="wind")
 
-    else:
-        raise ValueError("tech must be 'solar' or 'wind'")
+        def extract_electricity(data, label):
+            try:
+                if not data:
+                    st.warning(f"No data returned for {label}.")
+                    return []
+                values = list(data.values())
+                sample = values[0]
+                if isinstance(sample, dict) and "electricity" in sample:
+                    return [v["electricity"] for v in values]
+                elif isinstance(sample, (float, int)):
+                    return list(values)
+                else:
+                    st.warning(f"Unexpected format in {label}: {type(sample)}")
+                    st.json(sample)
+                    return []
+            except Exception as ex:
+                st.error(f"Failed to extract {label} data: {ex}")
+                return []
 
-    response = requests.get(base_url, headers=headers, params=params)
+        solar_raw = solar_data.get("data", {})
+        wind_raw = wind_data.get("data", {})
 
-    if response.status_code == 200:
-        return response.json()
-    else:
-        raise Exception(f"API Error {response.status_code}: {response.text}")
+        solar_df = pd.DataFrame({"electricity": extract_electricity(solar_raw, "solar")})
+        wind_df = pd.DataFrame({"electricity": extract_electricity(wind_raw, "wind")})
+
+        st.success("Assessment Complete!")
+
+        st.header("☀️ Solar Feasibility")
+        if "electricity" not in solar_df.columns or solar_df.empty:
+            st.error("❌ Solar data missing 'electricity' column. Check API response.")
+        else:
+            solar_yield = solar_df["electricity"].sum()
+            st.metric("Annual Solar Yield (kWh/kWp)", f"{solar_yield:.0f}")
+            solar_capex = 1000
+            solar_kwp = min(site_size / 10, annual_consumption / solar_yield)
+            solar_cost = solar_kwp * solar_capex
+            solar_savings = min(solar_yield * solar_kwp, annual_consumption) * 0.20
+            solar_payback = solar_cost / solar_savings if solar_savings > 0 else None
+
+            st.write(f"**Estimated System Size:** {solar_kwp:.1f} kWp")
+            st.write(f"**CapEx:** £{solar_cost:,.0f}")
+            st.write(f"**Annual Savings:** £{solar_savings:,.0f}")
+            st.write(f"**Estimated Payback:** {solar_payback:.1f} years" if solar_payback else "N/A")
+
+        st.divider()
+        st.header("💨 Wind Feasibility")
+        if "electricity" not in wind_df.columns or wind_df.empty:
+            st.error("❌ Wind data missing 'electricity' column. Check API response.")
+        else:
+            wind_yield = wind_df["electricity"].sum()
+            st.metric("Annual Wind Yield (kWh/kW @100m)", f"{wind_yield:.0f}")
+
+            turbine_spacing_area = 367000  # m² per turbine based on Enercon E-101 3MW
+            number_of_turbines = int(site_size // turbine_spacing_area)
+
+            if number_of_turbines == 0:
+                st.warning("⚠️ Site too small for a full wind turbine with proper spacing.")
+            else:
+                wind_capacity_kw = number_of_turbines * 3000  # Each turbine is 3MW = 3000kW
+                wind_capex = wind_capacity_kw * 1700
+                wind_savings = min(wind_yield * wind_capacity_kw, annual_consumption) * 0.20
+                wind_payback = wind_capex / wind_savings if wind_savings > 0 else None
+
+                st.write(f"**Estimated Turbines:** {number_of_turbines} x 3MW")
+                st.write(f"**Total Wind Capacity:** {wind_capacity_kw:,} kW")
+                st.write(f"**CapEx:** £{wind_capex:,.0f}")
+                st.write(f"**Annual Savings:** £{wind_savings:,.0f}")
+                st.write(f"**Estimated Payback:** {wind_payback:.1f} years" if wind_payback else "N/A")
+
+    except Exception as e:
+        st.error(f"❌ Error: {e}")
