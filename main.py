@@ -64,11 +64,14 @@ if st.button("Run Feasibility Check"):
             solar_used = min(solar_generated, annual_consumption)
             solar_excess = max(0, solar_generated - annual_consumption)
             solar_savings = solar_used * 0.20 + solar_excess * export_price
+            solar_export_income = solar_excess * export_price
             solar_payback = solar_cost / solar_savings if solar_savings > 0 else None
 
             st.write(f"**Estimated System Size:** {solar_kwp:.1f} kWp")
             st.write(f"**CapEx:** £{solar_cost:,.0f}")
-            st.write(f"**Annual Savings:** £{solar_savings:,.0f}")
+            st.write(f"**Annual Savings (inc. export):** £{solar_savings:,.0f}")
+            st.write(f"**Export Price:** £{export_price:.2f}/kWh")
+            st.write(f"**Export Income from Excess:** £{solar_export_income:,.0f}")
             st.write(f"**Estimated Payback:** {solar_payback:.1f} years" if solar_payback else "N/A")
 
         st.divider()
@@ -91,12 +94,15 @@ if st.button("Run Feasibility Check"):
                 wind_used = min(wind_generated, annual_consumption)
                 wind_excess = max(0, wind_generated - annual_consumption)
                 wind_savings = wind_used * 0.20 + wind_excess * export_price
+                wind_export_income = wind_excess * export_price
                 wind_payback = wind_capex / wind_savings if wind_savings > 0 else None
 
                 st.write(f"**Estimated Turbines:** {number_of_turbines} x 3MW")
                 st.write(f"**Total Wind Capacity:** {wind_capacity_kw:,} kW")
                 st.write(f"**CapEx:** £{wind_capex:,.0f}")
-                st.write(f"**Annual Savings:** £{wind_savings:,.0f}")
+                st.write(f"**Annual Savings (inc. export):** £{wind_savings:,.0f}")
+                st.write(f"**Export Price:** £{export_price:.2f}/kWh")
+                st.write(f"**Export Income from Excess:** £{wind_export_income:,.0f}")
                 st.write(f"**Estimated Payback:** {wind_payback:.1f} years" if wind_payback else "N/A")
 
     except Exception as e:
