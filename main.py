@@ -7,7 +7,11 @@ st.set_page_config(page_title="Renewable Feasibility Tool", layout="centered")
 st.title("🔋 Renewable Energy Feasibility Tool")
 
 postcode = st.text_input("Enter UK Postcode")
-site_size = st.number_input("Site Size (sqm)", min_value=0)
+unit = st.selectbox("Select site size unit", ["sqm", "hectares", "acres"])
+site_input = st.number_input("Site Size", min_value=0.0)
+unit_factors = {"sqm": 1, "hectares": 10000, "acres": 4046.86}
+site_size = site_input * unit_factors[unit]
+
 annual_consumption = st.number_input("Annual Energy Consumption (kWh/year)", min_value=0)
 
 if st.button("Run Feasibility Check"):
